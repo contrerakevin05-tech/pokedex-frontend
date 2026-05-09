@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokédex Explorer</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap"
+          rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <header class="app-header">
+
+            <h1>Pokédex Explorer</h1>
+
+            <p>Descubre el mundo Pokémon</p>
+
+        </header>
+
+        <main class="card">
+
+            <!-- ================= BUSCADOR ================= -->
+
+            <div class="search-section">
+
+                <label for="pokemon-input"
+                       class="search-label">
+
+                    Nombre:
+
+                </label>
+
+                <div class="input-group">
+
+                    <input
+                        type="text"
+                        id="pokemon-input"
+                        list="pokemon-list"
+                        placeholder="Ej. Pikachu"
+                        autocomplete="off">
+
+                    <datalist id="pokemon-list">
+
+                        <option value="Pikachu"></option>
+                        <option value="Charizard"></option>
+                        <option value="Bulbasaur"></option>
+                        <option value="Squirtle"></option>
+                        <option value="Raichu"></option>
+                        <option value="Gengar"></option>
+                        <option value="Dragonite"></option>
+                        <option value="Mewtwo"></option>
+                        <option value="Eevee"></option>
+                        <option value="Lapras"></option>
+
+                        <option value="Aegislash"></option>
+                        <option value="Dragapult"></option>
+                        <option value="Empoleon"></option>
+                        <option value="Haxorus"></option>
+                        <option value="Infernape"></option>
+                        <option value="Metagross"></option>
+                        <option value="Salamence"></option>
+                        <option value="Torterra"></option>
+                        <option value="Tyranitar"></option>
+                        <option value="Zoroark"></option>
+
+                    </datalist>
+
+                    <button id="btn-mysql"
+                            class="btn primary-btn">
+
+                        Consultar MySQL
+
+                    </button>
+
+                    <button id="btn-mongo"
+                            class="btn primary-btn">
+
+                        Consultar MongoDB
+
+                    </button>
+
+                </div>
+
+                <div id="error-message"
+                     class="error-message hidden">
+
+                    Pokémon no encontrado
+
+                </div>
+
+            </div>
+
+            <!-- ================= RESULTADO ================= -->
+
+            <div id="result-section"
+                 class="result-section hidden">
+
+                <div class="info-box">
+
+                    <div class="info-item">
+
+                        <span class="info-label">
+                            Altura:
+                        </span>
+
+                        <span id="altura-val"
+                              class="info-value">
+
+                            XXXX
+
+                        </span>
+
+                    </div>
+
+                    <div class="info-item">
+
+                        <span class="info-label">
+                            Peso:
+                        </span>
+
+                        <span id="peso-val"
+                              class="info-value">
+
+                            XXXX
+
+                        </span>
+
+                    </div>
+
+                    <div class="info-item abilities-container">
+
+                        <span class="info-label">
+                            Habilidades:
+                        </span>
+
+                        <ul id="habilidades-list"
+                            class="abilities-list">
+
+                        </ul>
+
+                    </div>
+
+                </div>
+
+                <button id="ver-imagenes-btn"
+                        class="btn secondary-btn">
+
+                    Ver imágenes
+
+                </button>
+
+            </div>
+
+            <!-- ================= LOADING ================= -->
+
+            <div id="loading-spinner"
+                 class="loading-spinner hidden">
+
+                <div class="spinner"></div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- ================= MODAL ================= -->
+
+    <div id="image-modal"
+         class="modal hidden">
+
+        <div class="modal-content">
+
+            <span class="close-btn">
+
+                &times;
+
+            </span>
+
+            <h2 id="modal-title">
+
+                Imágenes de
+
+                <span id="pokemon-name-modal"></span>
+
+            </h2>
+
+            <div class="sprites-grid">
+
+                <div class="sprite-item">
+
+                    <img id="sprite-front"
+                         src=""
+                         alt="Frontal">
+
+                    <span>Frontal</span>
+
+                </div>
+
+                <div class="sprite-item">
+
+                    <img id="sprite-back"
+                         src=""
+                         alt="Trasera">
+
+                    <span>Trasera</span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ================= JS ================= -->
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>
