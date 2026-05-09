@@ -2,200 +2,156 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log("✅ App corriendo");
 
+    // =========================
+    // ELEMENTOS DOM
+    // =========================
+
     const input = document.getElementById('pokemon-input');
 
     const btnMysql = document.getElementById('btn-mysql');
     const btnMongo = document.getElementById('btn-mongo');
 
     const errorMessage = document.getElementById('error-message');
-
     const resultSection = document.getElementById('result-section');
 
     const alturaVal = document.getElementById('altura-val');
     const pesoVal = document.getElementById('peso-val');
-
     const habilidadesList = document.getElementById('habilidades-list');
 
     const btnVerImagenes = document.getElementById('ver-imagenes-btn');
 
     const modal = document.getElementById('image-modal');
-
     const closeBtn = document.querySelector('.close-btn');
 
     const spriteFront = document.getElementById('sprite-front');
     const spriteBack = document.getElementById('sprite-back');
-
     const modalPokemonName = document.getElementById('pokemon-name-modal');
+
+    const loadingSpinner = document.getElementById('loading-spinner');
 
     let currentPokemon = null;
 
-    // ===== APIs =====
+    // =========================
+    // APIs
+    // =========================
+
     const API_MONGO = "https://pokemon2-qq1z.onrender.com";
     const API_MYSQL = "https://pokemon-89gd.onrender.com";
 
-    // ===== FETCH =====
-    async function fetchPokemon(name, useMongo = true) {
+    // =========================
+    // FETCH PRINCIPAL
+    // =========================
+
+    async function fetchPokemon(name, database) {
 
         name = name.trim().toLowerCase();
 
         if (!name) {
-
-            showError("Escribe un nombre");
-
+            showError("Escribe un nombre de Pokémon");
             return;
         }
 
-        const baseURL = useMongo
-            ? API_MONGO
-            : API_MYSQL;
+        // Reset UI
+        errorMessage.classList.add('hidden');
+        resultSection.classList.add('hidden');
 
-        const endpoint = useMongo
-            ? `/api/pokemon/${name}`
-            : `/pokemon/${name}`;
-
-        const url = `${baseURL}${endpoint}`;
+        loadingSpinner.classList.remove('hidden');
 
         try {
 
-            console.log("🔍 Consultando:", url);
+            let apiBase = "";
 
-            const controller = new AbortController();
-
-            const timeout = setTimeout(() => {
-                controller.abort();
-            }, 15000);
-
-            const response = await fetch(url, {
-                signal: controller.signal
-            });
-
-            clearTimeout(timeout);
-
-            if (!response.ok) {
-
-                const errorText = await response.text();
-
-                throw new Error(
-                    errorText || `Error ${response.status}`
-                );
-            }
-
-            const data = await response.json();
-
-            console.log("✅ DATA:", data);
-
-            // ===== NORMALIZAR =====
-            const pokemon = normalizePokemon(data);
-
-            currentPokemon = pokemon;
-
-            // ===== ALTURA Y PESO =====
-            alturaVal.textContent = pokemon.height ?? "-";
-            pesoVal.textContent = pokemon.weight ?? "-";
-
-            // ===== HABILIDADES =====
-            habilidadesList.innerHTML = "";
-
-            if (pokemon.abilities.length > 0) {
-
-                pokemon.abilities.forEach(ability => {
-
-                    const li = document.createElement('li');
-
-                    li.textContent = ability;
-
-                    habilidadesList.appendChild(li);
-                });
-
+            if (database === "mongo") {
+                apiBase = API_MONGO;
             } else {
-
-                const li = document.createElement('li');
-
-                li.textContent = "Sin habilidades";
-
-                habilidadesList.appendChild(li);
+                apiBase = API_MYSQL;
             }
 
-            resultSection.classList.remove('hidden');
+            const data = await requestAPI(apiBase, name);
 
-            errorMessage.classList.add('hidden');
+            currentPokemon = normalize(data);
 
-            console.log(
-                `📦 Fuente: ${useMongo ? 'MongoDB' : 'MySQL'}`
-            );
+            render(currentPokemon, database);
+
+            console.log(`📦 Datos obtenidos desde ${database}`);
 
         } catch (err) {
 
-            console.error("❌ ERROR:", err);
+            console.error("❌ Error:", err);
 
-            resultSection.classList.add('hidden');
+            showError(`Pokémon no encontrado en ${database.toUpperCase()}`);
 
-            if (err.name === 'AbortError') {
+        } finally {
 
-                showError(
-                    "El servidor tardó demasiado (Render dormido)"
-                );
+            loadingSpinner.classList.add('hidden');
 
-                return;
-            }
-
-            const dbName = useMongo
-                ? 'MongoDB'
-                : 'MySQL';
-
-            showError(
-                `Este pokemon no existe en ${dbName}`
-            );
         }
     }
 
-    // ===== NORMALIZAR DATOS =====
-    function normalizePokemon(data) {
+    // =========================
+    // REQUEST API
+    // =========================
 
-        // ===== MYSQL =====
-        if (data.nombre && data.imagenes) {
+    async function requestAPI(base, name) {
 
-            return {
+        const url = `${base}/api/pokemon/${name}`;
 
-                name: data.nombre,
+        console.log("🔍 Consultando:", url);
 
-                height: data.altura,
+        const controller = new AbortController();
 
-                weight: data.peso,
+        const timeout = setTimeout(() => {
+            controller.abort();
+        }, 15000);
 
-                abilities: Array.isArray(data.habilidades)
-                    ? data.habilidades
-                    : [],
+        const res = await fetch(url, {
+            signal: controller.signal
+        });
 
-                images: {
-                    front: data.imagenes?.frontal || "",
-                    back: data.imagenes?.trasera || ""
-                }
-            };
+        clearTimeout(timeout);
+
+        if (!res.ok) {
+
+            let errorText = "";
+
+            try {
+                errorText = await res.text();
+            } catch {
+                errorText = `Error ${res.status}`;
+            }
+
+            throw new Error(errorText);
         }
 
-        // ===== MONGO =====
+        return await res.json();
+    }
+
+    // =========================
+    // NORMALIZAR
+    // =========================
+
+    function normalize(data) {
+
         return {
 
             name: data.nombre || data.name || "Desconocido",
 
-            height: data.altura || data.height || "-",
+            height: data.altura ?? data.height ?? "N/A",
 
-            weight: data.peso || data.weight || "-",
+            weight: data.peso ?? data.weight ?? "N/A",
 
-            abilities: Array.isArray(
-                data.habilidades || data.abilities
-            )
-                ? (data.habilidades || data.abilities)
-                : [],
+            abilities: data.habilidades || data.abilities || [],
 
             images: {
+
                 front:
+                    data.imagen_frontal ||
                     data.imagenes?.frontal ||
                     data.images?.front ||
                     "",
 
                 back:
+                    data.imagen_trasera ||
                     data.imagenes?.trasera ||
                     data.images?.back ||
                     ""
@@ -203,7 +159,42 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // ===== ERROR =====
+    // =========================
+    // RENDER
+    // =========================
+
+    function render(pokemon, database) {
+
+        alturaVal.textContent = pokemon.height;
+        pesoVal.textContent = pokemon.weight;
+
+        habilidadesList.innerHTML = "";
+
+        if (!pokemon.abilities.length) {
+
+            habilidadesList.innerHTML = `
+                <li>Sin habilidades</li>
+            `;
+
+        } else {
+
+            pokemon.abilities.forEach(ability => {
+
+                const li = document.createElement('li');
+
+                li.textContent = ability;
+
+                habilidadesList.appendChild(li);
+            });
+        }
+
+        resultSection.classList.remove('hidden');
+    }
+
+    // =========================
+    // ERROR
+    // =========================
+
     function showError(msg) {
 
         errorMessage.textContent = msg;
@@ -211,47 +202,61 @@ document.addEventListener('DOMContentLoaded', () => {
         errorMessage.classList.remove('hidden');
     }
 
-    // ===== BOTONES =====
-    btnMongo.onclick = () => {
+    // =========================
+    // BOTONES
+    // =========================
 
-        fetchPokemon(input.value, true);
-    };
+    btnMongo.addEventListener('click', () => {
 
-    btnMysql.onclick = () => {
+        fetchPokemon(input.value, "mongo");
 
-        fetchPokemon(input.value, false);
-    };
+    });
 
-    // ===== ENTER =====
+    btnMysql.addEventListener('click', () => {
+
+        fetchPokemon(input.value, "mysql");
+
+    });
+
+    // ENTER => Mongo por defecto
+
     input.addEventListener('keypress', (e) => {
 
         if (e.key === 'Enter') {
 
-            fetchPokemon(input.value, true);
+            fetchPokemon(input.value, "mongo");
         }
     });
 
-    // ===== MODAL =====
-    btnVerImagenes.onclick = () => {
+    // =========================
+    // MODAL
+    // =========================
+
+    btnVerImagenes.addEventListener('click', () => {
 
         if (!currentPokemon) return;
 
-        modalPokemonName.textContent =
-            currentPokemon.name;
+        modalPokemonName.textContent = currentPokemon.name;
 
-        spriteFront.src =
-            currentPokemon.images.front || "";
-
-        spriteBack.src =
-            currentPokemon.images.back || "";
+        spriteFront.src = currentPokemon.images.front;
+        spriteBack.src = currentPokemon.images.back;
 
         modal.classList.remove('hidden');
-    };
+    });
 
-    // ===== CERRAR MODAL =====
-    closeBtn.onclick = () => {
+    // Cerrar modal
+    closeBtn.addEventListener('click', () => {
 
         modal.classList.add('hidden');
-    };
+    });
+
+    // Cerrar clic afuera
+    window.addEventListener('click', (e) => {
+
+        if (e.target === modal) {
+
+            modal.classList.add('hidden');
+        }
+    });
 
 });
